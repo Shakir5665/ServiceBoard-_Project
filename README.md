@@ -68,7 +68,7 @@
 | **Database** | MongoDB with Mongoose ODM |
 | **Authentication** | JSON Web Tokens (JWT), bcryptjs |
 | **Tooling** | ESLint, TypeScript Compiler |
-| **Deployment** | Vercel (Frontend) · Railway / Render (Backend) |
+| **Deployment** | Vercel (Frontend) · Render (Backend) |
 
 ---
 
