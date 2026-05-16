@@ -13,21 +13,9 @@ const { protect } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS — allow Vercel frontend in production, localhost in development
-const allowedOrigins = [
-  process.env.FRONTEND_URL,          // e.g. https://serviceboard.vercel.app
-  'http://localhost:3000',
-].filter(Boolean);
-
+// CORS — open to all origins; auth is enforced by JWT on every protected route
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (Render health checks, Postman, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS policy: origin ${origin} is not allowed`));
-    }
-  },
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
