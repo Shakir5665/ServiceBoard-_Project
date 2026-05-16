@@ -265,6 +265,151 @@ Register → Browse Jobs → Apply → Get Approved → Complete the Job → Ear
 
 ---
 
+## 🧪 Test Cases
+
+Use these test cases to manually verify all system functionalities. Test via the **Live Demo UI** or directly against the **API** using [Postman](https://postman.com) or `curl`.
+
+> **Base URL (API):** `https://serviceboard-project.onrender.com/api`
+
+---
+
+### TC-01 · User Registration
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 1.1 | Register as Homeowner | `POST /auth/register` with `role: "homeowner"`, valid name/email/password | `201` — Returns JWT token + user object |
+| 1.2 | Register as Tradesperson | `POST /auth/register` with `role: "tradesperson"`, add `experience`, `hourlyRate`, `serviceArea`, `bio` | `201` — Returns JWT token + full profile |
+| 1.3 | Duplicate email | Register with an already-used email | `400` — `"Email already registered"` |
+| 1.4 | Missing required fields | Send request without `email` or `password` | `500` — Mongoose validation error |
+
+---
+
+### TC-02 · User Login
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 2.1 | Valid login | `POST /auth/login` with correct email & password | `200` — Returns JWT token |
+| 2.2 | Wrong password | `POST /auth/login` with incorrect password | `401` — `"Invalid credentials"` |
+| 2.3 | Unknown email | `POST /auth/login` with unregistered email | `401` — `"Invalid credentials"` |
+| 2.4 | UI redirect | Login successfully via `/login` page | Redirected to homepage; Navbar shows **My Jobs** + 🔔 bell |
+
+---
+
+### TC-03 · Job Posting (Homeowner only)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 3.1 | Post a valid job | Login as homeowner → click **Post Your Request** → fill all fields → submit | Job appears on homepage with `Open` badge |
+| 3.2 | Tradesperson cannot post | Login as tradesperson → attempt `POST /jobs` with Bearer token | `403` — `"Only homeowners can post jobs"` |
+| 3.3 | Missing required fields | Submit job form without title or description | Form validation prevents submission |
+| 3.4 | Job appears on homepage | Post a job → visit homepage | New card visible with correct title, category, and date |
+
+---
+
+### TC-04 · Job Discovery & Search
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 4.1 | Browse all jobs | Visit homepage without filters | All jobs displayed in grid |
+| 4.2 | Filter by category | Select **Plumbing** from dropdown | Only Plumbing jobs shown |
+| 4.3 | Keyword search | Type `tap` in search box | Only jobs with "tap" in title or description shown |
+| 4.4 | Show only open jobs | Check **"Show Only Open Jobs"** | Jobs with `In Progress` or `Closed` status hidden |
+| 4.5 | Combined filters | Select category + keyword search simultaneously | Results are filtered by both criteria |
+
+---
+
+### TC-05 · Job Application (Tradesperson only)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 5.1 | Apply to an open job | Login as tradesperson → open a job → write message → **Submit Application** | `201` — Success banner shown; button changes to "Applied" |
+| 5.2 | Apply twice | Try to apply to the same job again | `400` — `"Application already submitted"` |
+| 5.3 | Apply to assigned job | Apply to a job already *In Progress* | `400` — `"Applications are no longer accepted for this job"` |
+| 5.4 | Homeowner cannot apply | Login as homeowner → attempt `POST /jobs/:id/apply` | `403` — `"Only tradespeople can apply"` |
+| 5.5 | Notification sent | Tradesperson applies → login as homeowner | Notification bell shows new alert about the application |
+
+---
+
+### TC-06 · Reviewing & Hiring Applicants (Homeowner)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 6.1 | View applicants | Login as homeowner → My Jobs → click **Review Applicants** | List of candidate cards with profiles, stars, hourly rate |
+| 6.2 | Approve an applicant | Click **Hire This Pro** → confirm in modal | Job status changes to `In Progress`; hired tradesperson is notified |
+| 6.3 | Others auto-rejected | Approve one → check other applications | All other applicants' status set to `rejected` |
+| 6.4 | Reject an applicant | Click **Decline** → confirm | Application marked rejected; tradesperson notified |
+| 6.5 | Cannot hire after assignment | Job is *In Progress* → try to approve another applicant | `400` — `"Job is no longer open for approval"` |
+
+---
+
+### TC-07 · Job Status Updates (Tradesperson)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 7.1 | Update to In Progress | Login as assigned tradesperson → open job detail → change status dropdown | Job status updated to `In Progress` |
+| 7.2 | Mark as Closed | Change status to `Closed` | Job marked Closed; homeowner receives completion notification; tradesperson's `completedJobs` count increments |
+| 7.3 | Unassigned tradesperson blocked | Attempt `PATCH /jobs/:id` with a different tradesperson's token | `403` — `"Unauthorized: You are not assigned to this job"` |
+| 7.4 | Homeowner cannot update status | Attempt `PATCH /jobs/:id` with homeowner token | `403` — `"Only tradespeople can update project status"` |
+
+---
+
+### TC-08 · Star Rating (Homeowner)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 8.1 | Rating card appears | Complete a job flow to *Closed* → login as homeowner → view job | Star rating panel visible at bottom of job detail page |
+| 8.2 | Submit a rating | Hover stars → click 4 stars | Rating submitted; confirmation card shown; tradesperson notified |
+| 8.3 | Cannot rate twice | Try to rate the same job again | `400` — `"You have already rated this job"` |
+| 8.4 | Rating shows on profile | Submit rating → login as tradesperson → go to **Edit Profile** | Star display and numeric average updated with new rating |
+| 8.5 | Rating on open job blocked | Attempt `POST /jobs/:id/rate` on an Open job | `400` — `"You can only rate a completed job"` |
+| 8.6 | Running average | Submit ratings from multiple homeowners | Tradesperson's rating is a correct average (e.g. 4 + 5 = 4.5) |
+
+---
+
+### TC-09 · Notifications
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 9.1 | Bell shows unread count | Trigger any event (apply, approve, etc.) | Orange pulsing dot with count appears on bell icon |
+| 9.2 | Mark as read | Click an unread notification | Notification background lightens; dot disappears; count decrements |
+| 9.3 | Clear all | Click **Clear All** in dropdown | All notifications removed; dropdown shows "All caught up!" |
+| 9.4 | Bell hidden when logged out | View the site without logging in | Notification bell is not rendered |
+
+---
+
+### TC-10 · Job Deletion (Homeowner)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 10.1 | Delete an open job | Login as homeowner → open own job → click **Delete Request** → confirm | Job removed; redirected to homepage |
+| 10.2 | Cannot delete active job | Attempt to delete a job with status *In Progress* or *Closed* | `400` — `"Cannot delete jobs that are active or completed"` |
+| 10.3 | Non-creator blocked | Attempt `DELETE /jobs/:id` with a different homeowner's token | `403` — `"Unauthorized: Only the creator can delete this job"` |
+
+---
+
+### TC-11 · Edit Profile (Tradesperson)
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 11.1 | Update profile | Login as tradesperson → **Edit Profile** → change hourly rate → Save | Success banner shown; data persisted in DB |
+| 11.2 | LKR prefix shown | View hourly rate input | `LKR` pill prefix displayed inline, no overlap |
+| 11.3 | Rating card on profile | View Edit Profile page | Star rating card shows current average and review count |
+| 11.4 | Homeowner cannot access | Attempt to navigate to `/dashboard/tradesperson/profile` as homeowner | Redirected away (role-protected) |
+
+---
+
+### TC-12 · Security & Edge Cases
+
+| # | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| 12.1 | Access protected page without login | Navigate to `/dashboard/homeowner` directly | Redirected to `/login` |
+| 12.2 | Expired / invalid token | Send request with a tampered JWT | `401` — `"Not authorized, token failed"` |
+| 12.3 | No token on protected route | Call `GET /api/auth/profile` without Authorization header | `401` — `"Not authorized, no token"` |
+| 12.4 | CORS from unknown origin | Call API from an unrelated domain | Request blocked at browser level |
+| 12.5 | Password stored hashed | Register → query MongoDB directly | Password field is a bcrypt hash, never plain text |
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please open an issue first to discuss what you'd like to change.
