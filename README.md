@@ -16,8 +16,7 @@
 
 <br/>
 
-[🚀 Live Demo](https://your-live-demo-url.vercel.app) · [📖 API Docs](#-api-reference) · [🐛 Report Bug](https://github.com/your-username/serviceboard/issues) · [💡 Request Feature](https://github.com/your-username/serviceboard/issues)
-
+[🚀 Live Demo](https://your-live-demo-url.vercel.app) · [📖 API Docs](#-api-reference)
 </div>
 
 
