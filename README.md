@@ -4,7 +4,7 @@
 
 ### *Where Good Work Meets the Right People*
 
-[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-Visit%20Site-orange?style=for-the-badge)](https://your-live-demo-url.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-Visit%20Site-orange?style=for-the-badge)](https://service-board-project.vercel.app/login)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-brightgreen?style=for-the-badge&logo=mongodb)](https://mongodb.com)
@@ -16,7 +16,7 @@
 
 <br/>
 
-[🚀 Live Demo](https://your-live-demo-url.vercel.app) · [📖 API Docs](#-api-reference)
+[🚀 Live Demo](https://service-board-project.vercel.app/login) · [📖 API Docs](#-api-reference)
 </div>
 
 
@@ -68,7 +68,7 @@
 | **Database** | MongoDB with Mongoose ODM |
 | **Authentication** | JSON Web Tokens (JWT), bcryptjs |
 | **Tooling** | ESLint, TypeScript Compiler |
-| **Deployment** | Vercel (Frontend) · Render (Backend) |
+| **Deployment** | Vercel (Frontend) · Render (Backend) | 
 
 ---
 
