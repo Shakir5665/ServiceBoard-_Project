@@ -189,6 +189,21 @@ npm run dev
 
 ---
 
+### 4. Running Backend Unit Tests
+
+You can run isolated, mock-based unit tests for the backend API endpoints to verify core request logic:
+
+```bash
+cd backend
+npm test
+```
+
+This runs Jest in isolation, mock-testing:
+- **`GET /api/jobs`** (success responses, search filters, and query handling)
+- **`GET /api/jobs/:id`** (individual details fetching, 404 handler, and 500 error cases)
+
+---
+
 ## 📖 User Guide
 
 ### Homeowner Workflow

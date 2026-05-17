@@ -1,0 +1,21 @@
+Subject: Full-Stack Developer Intern Submission - [Your Name]
+
+Dear GlobalTNA Team,
+
+I have completed the Full-Stack Developer Intern assessment!
+
+While the brief requested a basic working slice, I wanted to showcase my design-to-delivery capabilities and product thinking. I completed all core requirements and all optional bonus tasks (including keyword search, JWT authentication, and a sample data seeder script).
+
+To make the application feel like a genuine "slice" of the real ServiceBoard platform, I implemented clean role-based dashboards (homeowner vs tradesperson), a responsive notification bell, and an interactive rating feedback system.
+
+Throughout this, I kept the code architecture highly readable, simple, and clean—focusing heavily on premium UI/UX, mobile responsiveness, and clean Express/Next.js conventions.
+
+GitHub Repository: [Your Repo Link]
+Live Demo URL (Frontend): [Your Vercel Link]
+Live Backend API: [Your Render/Railway Link]
+I have also written a highly detailed, professional README in the repository root containing setup instructions, API documentation, and env schemas.
+
+I hope you enjoy reviewing the application as much as I enjoyed building it! I look forward to hearing your feedback.
+
+Best regards,
+[Your Name]

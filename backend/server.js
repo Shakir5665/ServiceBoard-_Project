@@ -543,6 +543,10 @@ app.post('/api/jobs/:id/rate', protect, async (req, res) => {
 });
 
 // Server Initialization
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
