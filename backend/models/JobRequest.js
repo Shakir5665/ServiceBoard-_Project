@@ -44,6 +44,12 @@ const JobRequestSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  homeownerRating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('JobRequest', JobRequestSchema);

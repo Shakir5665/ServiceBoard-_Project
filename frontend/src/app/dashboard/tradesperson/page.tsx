@@ -58,7 +58,8 @@ export default function TradespersonDashboard() {
 
       if (jobsRes.ok && appsRes.ok) {
         setAssignedJobs(await jobsRes.json());
-        setApplications(await appsRes.json());
+        const appsData: Application[] = await appsRes.json();
+        setApplications(appsData.filter(app => app.jobId !== null));
       } else {
         setError("Unable to load your dashboard. Please try again.");
       }
@@ -174,8 +175,11 @@ export default function TradespersonDashboard() {
                     <div className="flex items-center gap-10">
                       {getStatusBadge(app.status)}
                       {app.jobId && (
-                        <Link href={`/jobs/${app.jobId._id}`} className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-400 hover:text-orange-600 hover:border-orange-200 transition-all shadow-sm">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        <Link 
+                          href={`/jobs/${app.jobId._id}`}
+                          className="text-emerald-600 hover:text-emerald-800 font-black uppercase text-[10px] tracking-widest transition-colors"
+                        >
+                          View details
                         </Link>
                       )}
                     </div>

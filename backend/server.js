@@ -181,7 +181,7 @@ app.get('/api/jobs/assigned-to-me', protect, async (req, res) => {
 // Fetch single job details
 app.get('/api/jobs/:id', async (req, res) => {
   try {
-    const job = await JobRequest.findById(req.params.id);
+    const job = await JobRequest.findById(req.params.id).populate('assignedTo', 'name email');
     if (!job) return res.status(404).json({ message: 'Job not found' });
     res.json(job);
   } catch (error) {
@@ -492,32 +492,51 @@ app.post('/api/jobs/:id/rate', protect, async (req, res) => {
       return res.status(400).json({ message: 'No tradesperson assigned to this job' });
     }
 
-    if (job.ratedByHomeowner) {
-      return res.status(400).json({ message: 'You have already rated this job' });
-    }
-
     // Compute new running average rating
     const tradesperson = await User.findById(job.assignedTo);
     if (!tradesperson) return res.status(404).json({ message: 'Tradesperson not found' });
 
-    const newCount = tradesperson.ratingCount + 1;
-    const newRating = ((tradesperson.rating * tradesperson.ratingCount) + Number(rating)) / newCount;
+    let newCount = tradesperson.ratingCount;
+    let newRating = tradesperson.rating;
+
+    // Check if it's an update or first-time rating
+    if (job.homeownerRating) {
+      // It's an update
+      const oldRating = job.homeownerRating;
+      const totalSum = tradesperson.rating * tradesperson.ratingCount;
+      const newSum = totalSum - oldRating + Number(rating);
+      newRating = newCount > 0 ? (newSum / newCount) : Number(rating);
+    } else {
+      // First-time rating
+      newCount = tradesperson.ratingCount + 1;
+      const totalSum = tradesperson.rating * tradesperson.ratingCount;
+      const newSum = totalSum + Number(rating);
+      newRating = newSum / newCount;
+    }
 
     await User.findByIdAndUpdate(job.assignedTo, {
       rating: Math.round(newRating * 10) / 10,
       ratingCount: newCount,
     });
 
+    const isUpdate = !!job.homeownerRating;
     job.ratedByHomeowner = true;
+    job.homeownerRating = Number(rating);
     await job.save();
 
     await Notification.create({
       userId: job.assignedTo,
-      message: `You received a ${rating}-star rating for the job "${job.title}".`,
+      message: isUpdate
+        ? `A rating you received for "${job.title}" was updated to ${rating} stars.`
+        : `You received a ${rating}-star rating for the job "${job.title}".`,
       type: 'approval',
     });
 
-    res.json({ message: 'Rating submitted successfully', newRating: Math.round(newRating * 10) / 10 });
+    res.json({ 
+      message: 'Rating submitted successfully', 
+      newRating: Math.round(newRating * 10) / 10,
+      job: job
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error submitting rating', error: error.message });
   }

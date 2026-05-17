@@ -15,9 +15,10 @@ interface Job {
   contactEmail: string;
   status: string;
   createdBy: string;
-  assignedTo: string | null;
+  assignedTo: string | { _id: string; name: string; email: string } | null;
   createdAt: string;
   ratedByHomeowner: boolean;
+  homeownerRating?: number | null;
 }
 
 /**
@@ -78,6 +79,9 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
       if (res.ok) {
         const data = await res.json();
         setJob(data);
+        if (data.homeownerRating) {
+          setSelectedRating(data.homeownerRating);
+        }
 
         const token = localStorage.getItem("token");
         const userStr = localStorage.getItem("user");
@@ -194,6 +198,7 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
     setSelectedRating(star);
     setIsRating(true);
     setRatingError("");
+    setRatingSuccess(false);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}/rate`, {
@@ -205,8 +210,13 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
         body: JSON.stringify({ rating: star }),
       });
       if (res.ok) {
+        const data = await res.json();
         setRatingSuccess(true);
-        setJob(prev => prev ? { ...prev, ratedByHomeowner: true } : prev);
+        if (data.job) {
+          setJob(data.job);
+        } else {
+          setJob(prev => prev ? { ...prev, ratedByHomeowner: true, homeownerRating: star } : prev);
+        }
       } else {
         const data = await res.json();
         setRatingError(data.message || "Failed to submit rating.");
@@ -239,9 +249,15 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
 
   if (!job) return null;
 
+  const assignedWorker = job.assignedTo && typeof job.assignedTo === 'object'
+    ? (job.assignedTo as { _id: string; name: string; email: string })
+    : null;
+
+  const assignedId = assignedWorker ? assignedWorker._id : (job.assignedTo as string | null);
+
   const isCreator = currentUser?.role === 'homeowner' && currentUser.id === job.createdBy;
-  const isAssigned = currentUser?.role === 'tradesperson' && currentUser.id === job.assignedTo;
-  const isUnassignedTradesperson = currentUser?.role === 'tradesperson' && currentUser.id !== job.assignedTo;
+  const isAssigned = currentUser?.role === 'tradesperson' && currentUser.id === assignedId;
+  const isUnassignedTradesperson = currentUser?.role === 'tradesperson' && currentUser.id !== assignedId;
 
   return (
     <div className="w-full bg-[#FFFBEB] min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -346,42 +362,83 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
               <div className="bg-white p-8 rounded-3xl border border-amber-100 shadow-sm group hover:border-orange-300 transition-colors">
-                <h3 className="text-xs font-black text-stone-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  Client Information
-                </h3>
-                <ul className="space-y-6">
-                  <li className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Name</p>
-                      <p className="font-bold text-stone-900">{job.contactName || "User"}</p>
-                    </div>
-                  </li>
-                  {(isCreator || isAssigned) ? (
-                    <li className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                {isCreator ? (
+                  <>
+                    <h3 className="text-xs font-black text-stone-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      Assigned Tradesperson
+                    </h3>
+                    {assignedWorker ? (
+                      <ul className="space-y-6">
+                        <li className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Name</p>
+                            <p className="font-bold text-stone-900">{assignedWorker.name}</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Email</p>
+                            <a href={`mailto:${assignedWorker.email}`} className="font-bold text-orange-600 hover:text-orange-800 transition-colors underline decoration-orange-200 underline-offset-4">{assignedWorker.email}</a>
+                          </div>
+                        </li>
+                      </ul>
+                    ) : (
+                      <div className="py-4 text-center">
+                        <div className="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center text-stone-300 mx-auto mb-3">
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                        <p className="text-stone-800 font-bold text-sm">No Worker Assigned Yet</p>
+                        <p className="text-stone-400 text-xs mt-1">Review applications to hire a professional.</p>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Email</p>
-                        <a href={`mailto:${job.contactEmail}`} className="font-bold text-orange-600 hover:text-orange-800 transition-colors underline decoration-orange-200 underline-offset-4">{job.contactEmail}</a>
-                      </div>
-                    </li>
-                  ) : (
-                    <li className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-300 shrink-0">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Email</p>
-                        <p className="font-bold text-stone-400 italic">Protected until engagement</p>
-                      </div>
-                    </li>
-                  )}
-                </ul>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xs font-black text-stone-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      Client Information
+                    </h3>
+                    <ul className="space-y-6">
+                      <li className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Name</p>
+                          <p className="font-bold text-stone-900">{job.contactName || "User"}</p>
+                        </div>
+                      </li>
+                      {isAssigned ? (
+                        <li className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Email</p>
+                            <a href={`mailto:${job.contactEmail}`} className="font-bold text-orange-600 hover:text-orange-800 transition-colors underline decoration-orange-200 underline-offset-4">{job.contactEmail}</a>
+                          </div>
+                        </li>
+                      ) : (
+                        <li className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-300 shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Email</p>
+                            <p className="font-bold text-stone-400 italic">Protected until engagement</p>
+                          </div>
+                        </li>
+                      )}
+                    </ul>
+                  </>
+                )}
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-amber-100 shadow-sm group hover:border-orange-300 transition-colors">
@@ -415,7 +472,7 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
                 ) : (
                   <div>
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-100">
+                      <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-100 shrink-0">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </div>
                       <div>
@@ -468,71 +525,78 @@ export default function JobDetail({ params }: { params: Promise<{ id: string }> 
               </div>
             )}
 
-            {/* Star Rating Panel — shown to homeowner on closed, unrated jobs */}
+            {/* Star Rating Panel — shown to homeowner on closed, assigned jobs */}
             {isCreator && job.status === 'Closed' && job.assignedTo && (
-              <div className="mt-12 bg-white rounded-3xl border border-amber-100 p-10 shadow-sm">
-                {job.ratedByHomeowner || ratingSuccess ? (
-                  <div className="text-center">
-                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-4">
-                      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              <div className="mt-12 bg-white rounded-3xl border border-amber-100 p-6 sm:p-10 shadow-sm transition-all duration-300">
+                <div>
+                  <div className="flex items-start gap-4 mb-8">
+                    <div className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 shrink-0 shadow-sm">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-black text-stone-900 mb-1">Rating Submitted</h3>
-                    <p className="text-stone-500 font-medium">Thank you for your feedback!</p>
+                    <div>
+                      <h3 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+                        {job.ratedByHomeowner ? "Your Feedback & Rating" : "Rate This Tradesperson"}
+                      </h3>
+                      <p className="text-stone-500 font-medium text-sm sm:text-base">
+                        {job.ratedByHomeowner 
+                          ? "You have submitted feedback for this project. You can change it anytime below."
+                          : "How satisfied were you with the work done?"}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+
+                  {ratingError && (
+                    <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-sm text-red-700 font-bold">
+                      {ratingError}
+                    </div>
+                  )}
+
+                  {ratingSuccess && (
+                    <div className="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl text-sm text-emerald-700 font-bold flex items-center gap-2">
+                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Rating updated successfully!</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-3 mb-6">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        disabled={isRating}
+                        onClick={() => handleRate(star)}
+                        onMouseEnter={() => setHoveredStar(star)}
+                        onMouseLeave={() => setHoveredStar(0)}
+                        className="transition-transform hover:scale-125 focus:outline-none disabled:opacity-50"
+                      >
+                        <svg
+                          className={`w-10 h-10 transition-colors duration-150 ${
+                            star <= (hoveredStar || selectedRating)
+                              ? 'text-orange-500'
+                              : 'text-amber-200'
+                          }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-black text-stone-900">Rate This Tradesperson</h3>
-                        <p className="text-stone-500 font-medium">How satisfied were you with the work done?</p>
-                      </div>
-                    </div>
-
-                    {ratingError && (
-                      <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-sm text-red-700 font-bold">
-                        {ratingError}
-                      </div>
+                      </button>
+                    ))}
+                    {(hoveredStar || selectedRating) > 0 && (
+                      <span className="text-sm font-black text-stone-500 uppercase tracking-widest ml-2">
+                        {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][hoveredStar || selectedRating]}
+                      </span>
                     )}
-
-                    <div className="flex items-center gap-3 mb-6">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          disabled={isRating}
-                          onClick={() => handleRate(star)}
-                          onMouseEnter={() => setHoveredStar(star)}
-                          onMouseLeave={() => setHoveredStar(0)}
-                          className="transition-transform hover:scale-125 focus:outline-none disabled:opacity-50"
-                        >
-                          <svg
-                            className={`w-10 h-10 transition-colors ${
-                              star <= (hoveredStar || selectedRating)
-                                ? 'text-orange-500'
-                                : 'text-amber-200'
-                            }`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        </button>
-                      ))}
-                      {(hoveredStar || selectedRating) > 0 && (
-                        <span className="text-sm font-black text-stone-500 uppercase tracking-widest ml-2">
-                          {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][hoveredStar || selectedRating]}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-stone-400 font-medium">Click a star to submit your rating. You can only rate once.</p>
                   </div>
-                )}
+                  <p className="text-xs text-stone-400 font-medium">
+                    {job.ratedByHomeowner 
+                      ? "Click any star above if you would like to change your submitted rating."
+                      : "Click a star to submit your rating."}
+                  </p>
+                </div>
               </div>
             )}
 

@@ -83,6 +83,10 @@ p {
 
 /* Buttons */
 .btn-orange {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background-color: var(--accent-orange);
   color: #ffffff;
   font-weight: 700;
@@ -98,6 +102,10 @@ p {
 }
 
 .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   font-weight: 700;

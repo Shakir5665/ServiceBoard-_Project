@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 /**
  * Notification Interface
@@ -18,6 +19,7 @@ interface Notification {
  * Features a soft orange alert system with a welcoming dropdown.
  */
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,6 +92,28 @@ export default function NotificationBell() {
     }
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification._id);
+    }
+    setShowDropdown(false);
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.role === "tradesperson") {
+          router.push("/dashboard/tradesperson");
+        } else {
+          router.push("/dashboard/homeowner");
+        }
+      } else {
+        router.push("/");
+      }
+    } catch {
+      router.push("/");
+    }
+  };
+
   const getIcon = (type: string) => {
     const iconBaseClass = "w-8 h-8 rounded-full flex items-center justify-center";
     switch (type) {
@@ -140,8 +164,8 @@ export default function NotificationBell() {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-4 w-96 bg-white rounded-3xl shadow-xl border border-amber-100 z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in duration-200">
-          <div className="px-8 py-6 border-b border-amber-50 bg-orange-50/30 flex justify-between items-center">
+        <div className="fixed md:absolute right-4 md:right-0 left-4 md:left-auto top-[5.25rem] md:top-auto mt-0 md:mt-4 w-auto md:w-96 bg-white rounded-3xl shadow-2xl border border-amber-100 z-50 overflow-hidden transform origin-top md:origin-top-right animate-in fade-in zoom-in duration-200 max-w-md md:max-w-none mx-auto md:mx-0">
+          <div className="px-5 sm:px-8 py-4 sm:py-6 border-b border-amber-50 bg-orange-50/30 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <h3 className="text-base font-black text-stone-900">Notifications</h3>
               {unreadCount > 0 && (
@@ -162,7 +186,7 @@ export default function NotificationBell() {
           
           <div className="max-h-[28rem] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-8 py-16 text-center">
+              <div className="px-5 sm:px-8 py-12 sm:py-16 text-center">
                 <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-stone-300">
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0l-8 8-8-8" />
@@ -176,8 +200,8 @@ export default function NotificationBell() {
                 {notifications.map((notification) => (
                   <div 
                     key={notification._id} 
-                    className={`px-8 py-6 flex gap-4 hover:bg-orange-50/50 transition-all cursor-pointer group ${!notification.read ? 'bg-orange-50/20' : ''}`}
-                    onClick={() => !notification.read && markAsRead(notification._id)}
+                    className={`px-5 sm:px-8 py-4 sm:py-5 flex gap-3 sm:gap-4 hover:bg-orange-50/50 transition-all cursor-pointer group ${!notification.read ? 'bg-orange-50/20' : ''}`}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="shrink-0 pt-1">
                       {getIcon(notification.type)}

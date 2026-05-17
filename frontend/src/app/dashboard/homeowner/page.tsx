@@ -98,12 +98,9 @@ export default function HomeownerDashboard() {
             </svg>
           </div>
           <h3 className="text-2xl font-black text-stone-800 mb-2">No Requests Yet</h3>
-          <p className="text-stone-500 font-medium mb-10 max-w-sm mx-auto">
+          <p className="text-stone-500 font-medium max-w-sm mx-auto">
             You haven't posted any service requests yet. Let's get started with your first project!
           </p>
-          <Link href="/new" className="btn-orange px-10 py-3.5 rounded-2xl text-sm">
-            Create First Request
-          </Link>
         </div>
       ) : (
         <div className="premium-card overflow-hidden">
@@ -141,7 +138,7 @@ export default function HomeownerDashboard() {
                       <div className="flex justify-end gap-6">
                         <Link 
                           href={`/jobs/${job._id}`}
-                          className="text-stone-400 hover:text-stone-900 font-black uppercase text-[10px] tracking-widest transition-colors"
+                          className="text-emerald-600 hover:text-emerald-800 font-black uppercase text-[10px] tracking-widest transition-colors"
                         >
                           Details
                         </Link>
