@@ -244,6 +244,11 @@ Register → Browse Jobs → Apply → Get Approved → Complete the Job → Ear
 
 ## 🌐 API Reference
 
+### Health & Monitoring
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/ping` | ❌ | Database-free health check for UptimeRobot monitoring |
+
 ### Auth
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|

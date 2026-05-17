@@ -10,6 +10,16 @@ describe('Job Board API Endpoints Unit Tests', () => {
     jest.clearAllMocks();
   });
 
+  describe('GET /api/ping', () => {
+    it('should respond with 200 OK and health details', async () => {
+      const res = await request(app).get('/api/ping');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('OK');
+      expect(res.body).toHaveProperty('timestamp');
+      expect(res.body).toHaveProperty('uptime');
+    });
+  });
+
   describe('GET /api/jobs', () => {
     it('should return a list of all jobs with 200 OK', async () => {
       const mockJobs = [

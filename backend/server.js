@@ -46,6 +46,15 @@ const formatUserResponse = (user) => ({
   ratingCount: user.ratingCount,
 });
 
+// Public Ping/Health Endpoint for Uptime Robot (keeps server awake)
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 /**
  * AUTHENTICATION ROUTES
  */
